@@ -2,13 +2,16 @@ version: "3.8"
 
 services:
   db:
-    image: postgres
+    image: postgres:15  # Specify a version for stability
+    restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: pandemies
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persistent storage
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Remove if not needed outside Docker
 
   api:
     build: .
@@ -19,3 +22,8 @@ services:
     ports:
       - "8000:8000"
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    volumes:
+      - .:/app  # Sync project files into the container
+
+volumes:
+  postgres_data:  # Named volume for database persistence
