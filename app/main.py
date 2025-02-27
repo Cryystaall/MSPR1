@@ -1,9 +1,11 @@
 from fastapi import FastAPI
-from .routes import data
+from .routes import paysData
+from .routes import maladiesData
 
 app = FastAPI()
 
-app.include_router(data.router, prefix="/api", tags=["Data"])
+app.include_router(paysData.router, prefix="/api", tags=["PAY CRUD"])
+app.include_router(maladiesData.router, prefix="/api", tags=["MALADIES CRUD"])
 
 @app.get("/")
 def root():
