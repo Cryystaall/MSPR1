@@ -1,24 +1,30 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
 from fastapi import HTTPException
+from . import models, schemas
 
 
+# ---------------------- GET Pays by ID ----------------------
 def get_pays(db: Session, id_pays: int):
-    return db.query(models.Pays).filter(models.Pays.id_pays == id_pays).first()
+    pays = db.query(models.Pays).filter(models.Pays.id_pays == id_pays).first()
+    if not pays:
+        raise HTTPException(status_code=404, detail="Pays non trouvé")
+    return pays
 
-# Get all Pays
+
+# ---------------------- GET All Pays ----------------------
 def get_pays_list(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Pays).offset(skip).limit(limit).all()
 
-# Create a new Pays
+
+# ---------------------- CREATE Pays ----------------------
 def create_pays(db: Session, pays: schemas.PaysCreate):
-    # Check if the country already exists
+    # Vérifier si le pays existe déjà
     existing_pays = db.query(models.Pays).filter(models.Pays.nom_pays == pays.nom_pays).first()
     
     if existing_pays:
-        raise HTTPException(status_code=422, detail=f"Country {pays.nom_pays} already exists.")
+        raise HTTPException(status_code=422, detail=f"Le pays '{pays.nom_pays}' existe déjà.")
     
-    # Create new pays
+    # Créer le pays
     db_pays = models.Pays(nom_pays=pays.nom_pays, region_oms=pays.region_oms)
     
     db.add(db_pays)
@@ -28,27 +34,34 @@ def create_pays(db: Session, pays: schemas.PaysCreate):
     return db_pays
 
 
-# Update an existing Pays
-def update_pays(db: Session, id_pays: int, pays: schemas.PaysUpdate):
+# ---------------------- UPDATE Pays ----------------------
+def update_pays(db: Session, id_pays: int, pays_update: schemas.PaysUpdate):
     pays_to_update = db.query(models.Pays).filter(models.Pays.id_pays == id_pays).first()
-    if pays_to_update:
-        # Update fields from the pays_update schema
-        pays_to_update.nom_pays = pays.nom_pays
-        pays_to_update.region_oms = pays.region_oms  # Assuming this is also part of the update schema
-        
-        # Commit the changes
-        db.commit()
-        db.refresh(pays_to_update)
-        return pays_to_update
-    else:
-        return None
 
-# Delete an existing Pays
+    if not pays_to_update:
+        raise HTTPException(status_code=404, detail="Pays non trouvé")
+
+    # Mise à jour uniquement des champs fournis
+    if pays_update.nom_pays is not None:
+        pays_to_update.nom_pays = pays_update.nom_pays
+    if pays_update.region_oms is not None:
+        pays_to_update.region_oms = pays_update.region_oms
+
+    # Commit des changements
+    db.commit()
+    db.refresh(pays_to_update)
+    
+    return pays_to_update
+
+
+# ---------------------- DELETE Pays ----------------------
 def delete_pays(db: Session, id_pays: int):
     pays_to_delete = db.query(models.Pays).filter(models.Pays.id_pays == id_pays).first()
-    if pays_to_delete:
-        db.delete(pays_to_delete)
-        db.commit()
-        return pays_to_delete
-    else:
-        return None
+
+    if not pays_to_delete:
+        raise HTTPException(status_code=404, detail="Pays non trouvé")
+
+    db.delete(pays_to_delete)
+    db.commit()
+    
+    return {"message": f"Le pays '{pays_to_delete.nom_pays}' a été supprimé avec succès."}
