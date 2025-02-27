@@ -1,23 +1,22 @@
 from pydantic import BaseModel
+from typing import Optional
 
-# Schéma pour pays
+# ---------------------- Schémas pour Pays ----------------------
 
-# Schéma pour lire un pays
 class PaysBase(BaseModel):
     nom_pays: str
     region_oms: str
 
-# Schéma pour créer un pays
+
 class PaysCreate(PaysBase):
     pass
 
-# Schema for updating Pays
-class PaysUpdate(PaysBase):
-    # Here you can modify the attributes if needed, like making them optional
-    nom_pays: str = None
-    region_oms: str = None
 
-# Schéma pour lire un pays
+class PaysUpdate(BaseModel):
+    nom_pays: Optional[str] = None
+    region_oms: Optional[str] = None
+
+
 class Pays(PaysBase):
     id_pays: int
 
@@ -28,7 +27,7 @@ class Pays(PaysBase):
 
 
 
-# Schéma pour maladies
+# ---------------------- Schémas pour Maladies ----------------------
 
 class MaladieBase(BaseModel):
     nom_maladie: str
@@ -36,20 +35,53 @@ class MaladieBase(BaseModel):
     description: str
 
 
-# Schéma pour créer une maladie
 class MaladieCreate(MaladieBase):
     pass
 
-# Schéma pour mettre à jour une maladie
-class MaladieUpdate(MaladieBase):
-    # Here you can modify the attributes if needed, like making them optional
-    nom_maladie: str = None
-    type_maladie: str = None
-    description: str = None
 
-# Schéma pour lire une maladie
+class MaladieUpdate(BaseModel):
+    nom_maladie: Optional[str] = None
+    type_maladie: Optional[str] = None
+    description: Optional[str] = None
+
+
 class Maladie(MaladieBase):
     id_maladie: int
+
+    class Config:
+        from_attributes = True  # Convertit les objets ORM en modèles Pydantic
+
+
+
+
+
+# ---------------------- Schémas pour Situation Pandémique ----------------------
+
+class SituationPandemiqueBase(BaseModel):
+    id_pays: int
+    id_maladie: int
+    date_observation: str
+    cas_confirmes: int
+    deces: int
+    guerisons: int
+
+
+class SituationPandemiqueCreate(SituationPandemiqueBase):
+    pass
+
+
+class SituationPandemiqueUpdate(BaseModel):
+    id_pays: Optional[int] = None
+    id_maladie: Optional[int] = None
+    date_observation: Optional[str] = None
+    cas_confirmes: Optional[int] = None
+    deces: Optional[int] = None
+    guerisons: Optional[int] = None
+
+
+class SituationPandemique(SituationPandemiqueBase):
+    maladie: Maladie
+    pays: Pays
 
     class Config:
         from_attributes = True  # Convertit les objets ORM en modèles Pydantic
