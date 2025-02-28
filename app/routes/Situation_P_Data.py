@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import Situation_P_Crud, schemas
+from sqlalchemy.exc import SQLAlchemyError
 
 router = APIRouter()
 
@@ -22,7 +23,16 @@ def create_situations_bulk(situations_list: List[schemas.SituationPandemiqueCrea
 # ---------------------- Get All Situations Pandémiques ----------------------
 @router.get("/situations/", response_model=List[schemas.SituationPandemique])
 def read_situations_list(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return Situation_P_Crud.get_situations_pandemiques(db, skip=skip, limit=limit)
+    try:
+        # Get list of situations with pagination
+        return Situation_P_Crud.get_situations_pandemiques(db, skip=skip, limit=limit)
+    except SQLAlchemyError as e:
+        # Catch database-related exceptions and provide more specific error message
+        raise HTTPException(status_code=500, detail=f"Database error occurred: {str(e)}")
+    except Exception as e:
+        # Catch any other exception that is not database-related
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+    
 
 # ---------------------- Update a Situation Pandémique ----------------------
 @router.put("/situations/{id_pays}/{id_maladie}/{date_observation}", response_model=schemas.SituationPandemique)

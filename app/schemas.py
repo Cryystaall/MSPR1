@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import date
 
 
 # ---------------------- Schémas pour Pays ----------------------
@@ -55,7 +56,7 @@ class Maladie(MaladieBase):
 class SituationPandemiqueBase(BaseModel):
     id_pays: int
     id_maladie: int
-    date_observation: str
+    date_observation: date
     cas_confirmes: int = 0
     deces: int = 0
     guerisons: int = 0

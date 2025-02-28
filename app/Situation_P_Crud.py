@@ -2,12 +2,19 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from . import models, schemas
 from typing import List
+from . import models
 from sqlalchemy import exc
+from sqlalchemy.exc import SQLAlchemyError
 
 
-# ---------------------- GET ALL Situations Pandémiques ----------------------
+# ---------------------- Get All Situations Pandémiques ----------------------
 def get_situations_pandemiques(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.SituationPandemique).offset(skip).limit(limit).all()
+    try:
+        # Query the database for situations with pagination
+        return db.query(models.SituationPandemique).offset(skip).limit(limit).all()
+    except SQLAlchemyError as e:
+        # Log or handle SQL errors if necessary
+        raise e  # Re-raise the error to be caught by the route handler
 
 
 # ---------------------- GET Situation Pandémique BY PRIMARY KEYS ----------------------
