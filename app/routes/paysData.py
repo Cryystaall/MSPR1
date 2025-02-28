@@ -1,57 +1,55 @@
 from fastapi import APIRouter, Depends, HTTPException
+from typing import List
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import paysCrud, schemas
 
 router = APIRouter()
 
-# Create a new Pays
+# ---------------------- Create a new Pays (Single) ----------------------
 @router.post("/pays/", response_model=schemas.Pays)
 def create_pays(pays: schemas.PaysCreate, db: Session = Depends(get_db)):
     return paysCrud.create_pays(db=db, pays=pays)
 
-@router.get("/pays/{id_pays}")
-def read_pays(id_pays: int, db: Session = Depends(get_db)):
-    pays = paysCrud.get_pays(db, id_pays)
-    if pays is None:
-        raise HTTPException(status_code=404, detail="Pays not found")
-    return pays
+# ---------------------- Insert Multiple Pays Data ----------------------
+@router.post("/pays/bulk", response_model=List[schemas.Pays])
+def create_pays_bulk(pays_list: List[schemas.PaysCreate], db: Session = Depends(get_db)):
+    created_pays = []
+    for pays in pays_list:
+        created_pays.append(paysCrud.create_pays(db=db, pays=pays))
+    return created_pays
 
-# Get all Pays
-@router.get("/pays/", response_model=list[schemas.Pays])
+# ---------------------- Get All Pays ----------------------
+@router.get("/pays/", response_model=List[schemas.Pays])
 def read_pays_list(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    pays_list = paysCrud.get_pays_list(db, skip=skip, limit=limit)
-    return pays_list
+    return paysCrud.get_pays_list(db, skip=skip, limit=limit)
 
-# Update a Pays
-
+# ---------------------- Update a Pays ----------------------
 @router.put("/pays/{id_pays}", response_model=schemas.Pays)
 def update_pays(id_pays: int, pays_update: schemas.PaysUpdate, db: Session = Depends(get_db)):
     # Check if the pays exists
     pays = paysCrud.get_pays(db, id_pays)
-    if pays is None:
-        raise HTTPException(status_code=404, detail="Pays not found")
-    
-    # Call the function to update the pays in the database
+    if not pays:
+        raise HTTPException(status_code=404, detail="Pays non trouvé")
+
+    # Update pays
     updated_pays = paysCrud.update_pays(db, id_pays, pays_update)
-    if updated_pays is None:
-        raise HTTPException(status_code=400, detail="Error updating pays")
-    
+    if not updated_pays:
+        raise HTTPException(status_code=400, detail="Erreur lors de la mise à jour du pays")
+
     return updated_pays
 
-# delete pay
+# ---------------------- Delete Pays ----------------------
 @router.delete("/pays/{id_pays}", response_model=schemas.Pays)
 def delete_pays(id_pays: int, db: Session = Depends(get_db)):
     # Check if the pays exists
     pays = paysCrud.get_pays(db, id_pays)
-    if pays is None:
-        raise HTTPException(status_code=404, detail="Pays not found")
+    if not pays:
+        raise HTTPException(status_code=404, detail="Pays non trouvé")
     
-    # Call the function to delete the pays in the database
+    # Delete pays
     deleted_pays = paysCrud.delete_pays(db, id_pays)
-    if deleted_pays is None:
-        raise HTTPException(status_code=400, detail="Error deleting pays")
-    
-    # Return success message and deleted pays object as response
-    # Just return the deleted pays as the response, FastAPI will handle serialization
+    if not deleted_pays:
+        raise HTTPException(status_code=400, detail="Erreur lors de la suppression du pays")
+
     return deleted_pays

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 # ---------------------- Schémas pour Pays ----------------------
 
 class PaysBase(BaseModel):
@@ -22,9 +23,6 @@ class Pays(PaysBase):
 
     class Config:
         from_attributes = True  # Convertit les objets ORM en modèles Pydantic
-
-
-
 
 
 # ---------------------- Schémas pour Maladies ----------------------
@@ -52,18 +50,19 @@ class Maladie(MaladieBase):
         from_attributes = True  # Convertit les objets ORM en modèles Pydantic
 
 
-
-
-
 # ---------------------- Schémas pour Situation Pandémique ----------------------
 
 class SituationPandemiqueBase(BaseModel):
     id_pays: int
     id_maladie: int
     date_observation: str
-    cas_confirmes: int
-    deces: int
-    guerisons: int
+    cas_confirmes: int = 0
+    deces: int = 0
+    guerisons: int = 0
+    cas_actifs: int = 0
+    nouveaux_cas: int = 0
+    nouveaux_deces: int = 0
+    nouvelles_guerisons: int = 0
 
 
 class SituationPandemiqueCreate(SituationPandemiqueBase):
@@ -71,12 +70,13 @@ class SituationPandemiqueCreate(SituationPandemiqueBase):
 
 
 class SituationPandemiqueUpdate(BaseModel):
-    id_pays: Optional[int] = None
-    id_maladie: Optional[int] = None
-    date_observation: Optional[str] = None
     cas_confirmes: Optional[int] = None
     deces: Optional[int] = None
     guerisons: Optional[int] = None
+    cas_actifs: Optional[int] = None
+    nouveaux_cas: Optional[int] = None
+    nouveaux_deces: Optional[int] = None
+    nouvelles_guerisons: Optional[int] = None
 
 
 class SituationPandemique(SituationPandemiqueBase):

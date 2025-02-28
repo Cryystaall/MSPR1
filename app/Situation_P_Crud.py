@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from . import models, schemas
+from typing import List
+from sqlalchemy import exc
 
 
 # ---------------------- GET ALL Situations Pandémiques ----------------------
@@ -8,72 +10,109 @@ def get_situations_pandemiques(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.SituationPandemique).offset(skip).limit(limit).all()
 
 
-# ---------------------- GET Situation Pandémique BY ID ----------------------
-def get_situation_pandemique(db: Session, id_situation: int):
-    situation = db.query(models.SituationPandemique).filter(models.SituationPandemique.id_situation == id_situation).first()
+# ---------------------- GET Situation Pandémique BY PRIMARY KEYS ----------------------
+def get_situation_pandemique(db: Session, id_pays: int, id_maladie: int, date_observation: str):
+    situation = db.query(models.SituationPandemique).filter(
+        models.SituationPandemique.id_pays == id_pays,
+        models.SituationPandemique.id_maladie == id_maladie,
+        models.SituationPandemique.date_observation == date_observation
+    ).first()
+
     if not situation:
         raise HTTPException(status_code=404, detail="Situation pandémique non trouvée")
+
     return situation
 
 
-# ---------------------- CREATE a Situation Pandémique ----------------------
+# ---------------------- CREATE a Single Situation Pandémique ----------------------
 def create_situation_pandemique(db: Session, situation_data: schemas.SituationPandemiqueCreate):
-    # Vérifier si la maladie et le pays existent avant d'ajouter la situation
-    maladie = db.query(models.Maladie).filter(models.Maladie.id_maladie == situation_data.id_maladie).first()
-    pays = db.query(models.Pays).filter(models.Pays.id_pays == situation_data.id_pays).first()
-
-    if not maladie:
+    # Vérifier l'existence de la maladie et du pays
+    if not db.query(models.Maladie).filter(models.Maladie.id_maladie == situation_data.id_maladie).first():
         raise HTTPException(status_code=404, detail="Maladie non trouvée")
-    if not pays:
+
+    if not db.query(models.Pays).filter(models.Pays.id_pays == situation_data.id_pays).first():
         raise HTTPException(status_code=404, detail="Pays non trouvé")
 
-    new_situation = models.SituationPandemique(
-        id_pays=situation_data.id_pays,
-        id_maladie=situation_data.id_maladie,
-        date_observation=situation_data.date_observation,
-        cas_confirmes=situation_data.cas_confirmes,
-        deces=situation_data.deces,
-        guerisons=situation_data.guerisons
-    )
+    new_situation = models.SituationPandemique(**situation_data.dict())
+
     db.add(new_situation)
     db.commit()
     db.refresh(new_situation)
+
     return new_situation
 
 
+# Bulk Insert Function with Chunking and SQLAlchemy's bulk_save_objects
+def create_situations_bulk(db: Session, situations_data: List[schemas.SituationPandemiqueCreate], chunk_size: int = 1000):
+    total_inserted = 0
+    new_situations = []
+    
+    # Loop through data and chunk it
+    for i, situation_data in enumerate(situations_data):
+        # Validate country and disease existence
+        if not db.query(models.Maladie).filter(models.Maladie.id_maladie == situation_data.id_maladie).first():
+            raise HTTPException(status_code=404, detail=f"Maladie with ID {situation_data.id_maladie} not found")
+        if not db.query(models.Pays).filter(models.Pays.id_pays == situation_data.id_pays).first():
+            raise HTTPException(status_code=404, detail=f"Pays with ID {situation_data.id_pays} not found")
+
+        new_situations.append(models.SituationPandemique(**situation_data.dict()))
+        
+        # Insert in chunks
+        if len(new_situations) >= chunk_size:
+            try:
+                db.bulk_save_objects(new_situations)
+                db.commit()  # Commit chunk to DB
+                total_inserted += len(new_situations)
+                new_situations = []  # Reset for next batch
+            except exc.SQLAlchemyError as e:
+                db.rollback()  # Rollback in case of error
+                raise HTTPException(status_code=500, detail="Error during bulk insert.")
+    
+    # Insert any remaining situations
+    if new_situations:
+        try:
+            db.bulk_save_objects(new_situations)
+            db.commit()
+            total_inserted += len(new_situations)
+        except exc.SQLAlchemyError as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Error during bulk insert.")
+
+    return {"message": f"{total_inserted} situations successfully added."}
 # ---------------------- UPDATE a Situation Pandémique ----------------------
-def update_situation_pandemique(db: Session, id_situation: int, situation_update: schemas.SituationPandemiqueUpdate):
-    situation = db.query(models.SituationPandemique).filter(models.SituationPandemique.id_situation == id_situation).first()
+def update_situation_pandemique(db: Session, id_pays: int, id_maladie: int, date_observation: str,
+                                situation_update: schemas.SituationPandemiqueUpdate):
+    situation = db.query(models.SituationPandemique).filter(
+        models.SituationPandemique.id_pays == id_pays,
+        models.SituationPandemique.id_maladie == id_maladie,
+        models.SituationPandemique.date_observation == date_observation
+    ).first()
 
     if not situation:
         raise HTTPException(status_code=404, detail="Situation pandémique non trouvée")
 
-    # Mise à jour des champs uniquement si des valeurs sont fournies
-    if situation_update.id_pays is not None:
-        situation.id_pays = situation_update.id_pays
-    if situation_update.id_maladie is not None:
-        situation.id_maladie = situation_update.id_maladie
-    if situation_update.date_observation is not None:
-        situation.date_observation = situation_update.date_observation
-    if situation_update.cas_confirmes is not None:
-        situation.cas_confirmes = situation_update.cas_confirmes
-    if situation_update.deces is not None:
-        situation.deces = situation_update.deces
-    if situation_update.guerisons is not None:
-        situation.guerisons = situation_update.guerisons
+    for field, value in situation_update.dict(exclude_unset=True).items():
+        setattr(situation, field, value)
 
     db.commit()
     db.refresh(situation)
+
     return situation
 
 
+
 # ---------------------- DELETE a Situation Pandémique ----------------------
-def delete_situation_pandemique(db: Session, id_situation: int):
-    situation = db.query(models.SituationPandemique).filter(models.SituationPandemique.id_situation == id_situation).first()
+def delete_situation_pandemique(db: Session, id_pays: int, id_maladie: int, date_observation: str):
+    situation = db.query(models.SituationPandemique).filter(
+        models.SituationPandemique.id_pays == id_pays,
+        models.SituationPandemique.id_maladie == id_maladie,
+        models.SituationPandemique.date_observation == date_observation
+    ).first()
 
     if not situation:
         raise HTTPException(status_code=404, detail="Situation pandémique non trouvée")
 
     db.delete(situation)
     db.commit()
+
     return {"message": "Situation pandémique supprimée avec succès"}

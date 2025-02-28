@@ -2,11 +2,9 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from . import models, schemas
 
-
 # ---------------------- GET All Maladies ----------------------
 def get_maladies_list(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Maladie).offset(skip).limit(limit).all()
-
 
 # ---------------------- GET Maladie by ID ----------------------
 def get_maladie(db: Session, id_maladie: int):
@@ -14,7 +12,6 @@ def get_maladie(db: Session, id_maladie: int):
     if not maladie:
         raise HTTPException(status_code=404, detail=f"Maladie avec l'ID {id_maladie} introuvable.")
     return maladie
-
 
 # ---------------------- CREATE Maladie ----------------------
 def create_maladie(db: Session, maladie: schemas.MaladieCreate):
@@ -57,7 +54,6 @@ def update_maladie(db: Session, id_maladie: int, maladie_update: schemas.Maladie
     db.refresh(maladie_to_update)
     
     return maladie_to_update
-
 
 # ---------------------- DELETE Maladie ----------------------
 def delete_maladie(db: Session, id_maladie: int):

@@ -1,0 +1,69 @@
+/data/*.json
+/data/*.sql
+
+/.env
+# Python specific ignores
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.db
+*.sqlite3
+
+# FastAPI specific ignores
+*.env
+*.env.*
+instance/
+.env.local
+.env.production
+
+# Virtual environment directory
+venv/
+env/
+.venv/
+
+# IDE and editor specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# pytest specific ignores
+*.log
+*.pot
+*.pkl
+*.cover
+*.hypothesis/
+
+# Jupyter Notebook specific ignores
+.ipynb_checkpoints/
+
+# Pytest caches
+.pytest_cache/
+
+# Mypy (static type checker) specific ignores
+.mypy_cache/
+
+# coverage
+.coverage
+.coverage.*
+
+# Django specific (if applicable)
+db.sqlite3
+
+# Docker related files
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# FastAPI generated folders and logs
+*.log
+
+# VS Code settings
+.vscode/
+
+# pyenv specific ignores
+.python-version
+
+# Secrets (If you store any API keys or sensitive data)
+*.secret

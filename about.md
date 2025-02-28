@@ -25,11 +25,11 @@ pip install fastapi uvicorn sqlalchemy psycopg2 alembic pydantic
 
 
 ## Next Steps
-✅ Add authentication (JWT)
-✅ Create a frontend (React, Streamlit)
-✅ Add visualization (Dash, Power BI)
+- Add authentication (JWT)
+- Create a frontend (React, Streamlit)
+- Add visualization (Dash, Power BI)
 
-Want to go for the frontend or authentication next? 🚀
+Want to go for the frontend or authentication next?
 
 
 
