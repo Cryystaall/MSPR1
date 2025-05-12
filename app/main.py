@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routes import paysData, maladiesData, Situation_P_Data
+from app.routes import paysData, maladiesData, Situation_P_Data
 
 # Initialize the FastAPI app
 app = FastAPI()
